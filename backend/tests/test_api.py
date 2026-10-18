@@ -51,3 +51,18 @@ def test_unofficial_streaming_title_gets_warning(monkeypatch):
     assert data['score'] == 60
     assert data['category'] == 'entretenimiento no oficial'
     assert any(f['code'] == 'PIRACY_SIGNALS' for f in data['findings'])
+
+def test_unavailable_page_is_not_presented_as_verified(monkeypatch):
+    monkeypatch.setattr(engine, '_inspect_page_browser', lambda _: {
+        'final_url': 'https://example.com',
+        'status': 503,
+        'title': 'Render - Application loading',
+        'text': '',
+        'browser_inspected': True,
+    })
+    data = client.post('/api/v1/analyze/url', json={'value':'https://example.com'}).json()
+    assert data['verdict'] == 'no_concluyente'
+    assert data['score'] == 15
+    assert data['category'] == 'sitio no disponible / contenido no verificado'
+    assert data['page_title'] is None
+    assert any(f['code'] == 'SERVICE_UNAVAILABLE' for f in data['findings'])

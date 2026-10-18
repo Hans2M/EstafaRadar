@@ -35,6 +35,8 @@ def _findings_to_verdict(kind: str, findings: list[Finding], score: int, uncerta
         advice = "Evita hacer clic en botones de descarga o instalar reproductores y extensiones. Usa servicios oficiales; este tipo de páginas puede contener publicidad maliciosa, redirecciones o archivos no confiables."
     elif any(f.code == "ACCESS_RESTRICTED" for f in findings):
         advice = "El sitio no permitió verificar su contenido y mostró una protección anti-bot o acceso restringido. No lo consideres seguro: verifica el dominio desde un canal oficial y no introduzcas datos."
+    elif any(f.code == "SERVICE_UNAVAILABLE" for f in findings):
+        advice = "El sitio no está disponible o no entregó su contenido en este momento. No se puede determinar su seguridad; evita reintentar desde botones o descargas y verifica el dominio por un canal oficial."
     elif verdict == "alto":
         advice = "No ingreses claves, códigos ni datos de pago. Comprueba la solicitud desde la app o web oficial abierta por ti mismo."
     elif verdict == "moderado":
@@ -266,12 +268,26 @@ def analyze_url(value: str, kind: str = "url") -> ScanResult:
                 severity="warning",
                 description="El servidor no mostró el contenido real y respondió con una pantalla de acceso restringido o protección anti-bot.",
             ))
+        elif status in (408, 429, 500, 502, 503, 504):
+            points += 15
+            category = "sitio no disponible / contenido no verificado"
+            findings.append(Finding(
+                code="SERVICE_UNAVAILABLE",
+                severity="warning",
+                description=f"El servidor respondió con HTTP {status}; el contenido real no pudo verificarse. No interpretes esta respuesta como señal de seguridad.",
+            ))
         else:
             findings.append(Finding(code="HTTP_ERROR", severity="warning", description=f"El servidor respondió con HTTP {status}; no se pudo verificar el contenido."))
+    if page.get("status", 200) >= 400 and page_title and re.search(
+        r"(application loading|loading\.\.\.|just a moment|error|temporarily unavailable)",
+        page_title,
+        re.I,
+    ):
+        page_title = None
     if not findings:
         findings.append(Finding(code="NO_HEURISTIC", severity="info", description="No se encontraron indicadores con las reglas locales disponibles."))
     return _findings_to_verdict(
-        kind, findings, points, uncertain=(access_restricted or points == 0),
+        kind, findings, points, uncertain=(access_restricted or page.get("status", 200) >= 400 or points == 0),
         visited_destination=bool(page.get("final_url")), category=category,
         page_title=page_title, page_description=page_description, final_url=page.get("final_url"),
         inspection_mode=inspection_mode,
