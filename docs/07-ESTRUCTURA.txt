@@ -1,0 +1,27 @@
+EstafaRadar_Arquitectura_Profesional/
+├── README.md
+├── .env.example
+├── docker-compose.yml
+├── backend/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── schemas.py
+│   │   └── engine.py
+│   └── tests/test_api.py
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── index.html
+│   └── src/{main.tsx,App.tsx,style.css}
+├── database/schema.sql
+└── docs/
+    ├── 01-ARQUITECTURA.md
+    ├── 02-SEGURIDAD-Y-PRIVACIDAD.md
+    ├── 03-API-Y-DATOS.md
+    ├── 04-PANTALLAS-Y-UX.md
+    ├── 05-ROADMAP.md
+    └── 06-DESPLIEGUE.md
